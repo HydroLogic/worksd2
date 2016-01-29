@@ -3,6 +3,11 @@
 
 ### Command Line
 
+#### CSVkit
+
+Print column names: ```csvcut -n data.csv ```
+
+
 #### OGR
 Select from 2010 Census Housing Block files 
 ```Shell
@@ -16,6 +21,7 @@ Create a ~30m grid from floodplain results
 gdal_rasterize -a fldht_m -l hr_floodplain_complete_binned_final -a_nodata -9999 -tr 0.00034 0.00034 -tap -ot Float32 hr_floodplain_complete_fh.vrt harris30m_100yr_fp_1.tif
 gdal_rasterize -at -burn 1 -init 0 -ot Byte -tr 0.0002778 0.0002778 -co COMPRESS=LZW -a_nodata -9999 -l dfirm19011C_poly dfirm19011C_poly.shp dfirm19011C_poly.tif
 
+gdal_translate -a_nodata -9999 -co tiled=yes -co bigtiff=yes -co compress=lzw ras100yrfldht.vrt conusa_100yr.tif
 ```
 #### AWS
 ```Shell
