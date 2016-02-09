@@ -1,6 +1,15 @@
 # Notes from lab machine 
 
 
+## Needed lists that I could need and need some more:
+
+### HUC Zone List ConUSA
+		huclist = ["01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18"]
+### State Lists ConUSA
+		stateabbreviations = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY']
+		statenames = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"]
+
+
 ### Command Line
 
 #### CSVkit
@@ -43,6 +52,20 @@ make_bucket: s3://dfirm-raw/
 
 ### Basic Operators
 
+Create a new user for the database:
+Unix shell [ubuntu](https://help.ubuntu.com/community/PostgreSQL): 
+		sudo -u postgres createuser -D -A -P myuser
+		sudo -u postgres createdb -O myuser mydb
+
+
+Create the postgis extentsions:
+```SQL
+CREATE EXTENSION postgis;
+CREATE EXTENSION postgis_topology;
+CREATE EXTENSION fuzzystrmatch;
+CREATE EXTENSION postgis_tiger_geocoder;
+```
+
 ### Geometry and PostGIS
 
 Add a geometry column for latitude and longitude
@@ -57,6 +80,28 @@ Vacuum and Analyze the table
 		VACUUM ANALYZE fema_aal.res2013_fixedriv_v2_location;
 		CREATE INDEX idx_zctas_thepoint_meter ON zctas
   		USING GIST (thepoint_meter);
+Random Shit
+		ALTER TABLE zctas ALTER COLUMN thepoint_meter SET NOT NULL;
+		CLUSTER idx_zctas_thepoint_meter ON zctas;
+		VACUUM ANALYZE zctas;
+Join county level areas - 
+```SQL
+create table fema_aal.final_county_elem_aal_agg as
+SELECT 
+"county_aal_proj"."cntyname",
+"county_elem_aal_agg"."countyfips",
+"county_aal_proj"."population",
+"county_elem_aal_agg"."ele_tiv",
+"county_elem_aal_agg"."ele_guaal",
+(ele_guaal/population) as ele_aalpca,
+"county_aal_proj"."totalloss",
+"county_aal_proj"."totlosspca",
+"county_elem_aal_agg"."geom"
+FROM "fema_aal"."county_elem_aal_agg"
+join "fema_aal"."county_aal_proj"
+on "county_elem_aal_agg"."countyfips"="county_aal_proj"."countyfips";
+```
+
 
 Now do a zonal statistic with points that fall within the HU8 geometry
 ```SQL
@@ -73,14 +118,17 @@ on ST_Intersects(hu8.geom, ele.geom)
 group by hu8.huc, hu8.geom;
 ```
 
+### General postgis functions
+
+Creating a concave hull around points, where the percent is lower the more closer to the actual points they are, the true/false at the end means whether or not holes are allowed in the polygon...
+```SQL
+SELECT ST_ConcaveHull( ST_Collect(geom),0.50, true ) geom
+FROM temp01test WHERE geom IS NOT NULL;
+```
 
 
 
 
-		ALTER TABLE zctas ALTER COLUMN thepoint_meter SET NOT NULL;
-		CLUSTER idx_zctas_thepoint_meter ON zctas;
-
-		VACUUM ANALYZE zctas;
 
 
 ### NHD Processing
